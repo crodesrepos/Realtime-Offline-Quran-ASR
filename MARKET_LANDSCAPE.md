@@ -4,7 +4,7 @@ A scan of what already exists in the Quranic speech-recognition space —
 products, open models, datasets, tooling, and academic work — and an honest
 read on where the lane is for this project.
 
-*Last updated: 2026-05-01.*
+*Last updated: 2026-05-03.*
 
 ---
 
@@ -34,6 +34,14 @@ build:
 **The open lane this project occupies:** *free, fully-offline, mobile-first,
 open-source Quranic captioning that runs without internet or subscription.*
 Neither incumbent serves this lane.
+
+**Architectural commitment (load-bearing, not decorative):** the application is
+**fully offline** — no internet required for any inference path — and
+**privacy-first**. User audio is never written to durable storage, never
+uploaded, never used to train any model the project ships. Real-imam training
+data is collected exclusively by the project team and explicit external
+contributors, never sourced from app users. See whitepaper §5.4 for the full
+data-acquisition strategy.
 
 ---
 
@@ -196,23 +204,34 @@ position, not a marketing veneer.
 
 ## Implications for the v2 roadmap
 
-The whitepaper (v0.2) budgets **8-11 weeks** to a working prototype, with
-Phase 1 (data prep / force-alignment) consuming 2-3 weeks. Given what now
-exists publicly:
+The whitepaper (v0.2) budgeted **8-11 weeks** to a working prototype. v0.3
+naively dropped that to ~5-7 weeks by leveraging `everyayah-phonemes`. **v0.4
+honestly revises to ~7-10 weeks** by adding Phase 0a/0b — real-imam corpus
+collection, project-team-sourced — to address the studio→masjid acoustic gap
+that has already failed once and which no public dataset solves.
 
-| Phase | Whitepaper estimate | Revised estimate | Why |
+| Phase | v0.2 | v0.4 | Why |
 |---|---|---|---|
-| 1. Data prep / alignment | 2-3 wks | **2-5 days** | `everyayah-phonemes` already exists with Tajweed-aware phoneme labels. Just evaluate quality and possibly augment with a small real-imam set. |
+| **0a. Real-imam evaluation corpus** | implicit | **1-2 wks** | New phase. 30-60 min hand-aligned, project-team-collected at partner masjids. Held back from training entirely. Gates Phase 2. |
+| **0b. Real-imam training corpus** | implicit | **2-3 wks** | New phase. 10-30 h, force-aligned with `tarteel-ai/whisper-base-ar-quran`. Sources: project-team fieldwork, already-public khutbah audio (license-verified), partner sharing. Released as a public open dataset. Runs in parallel with 0a. |
+| 1. Studio data prep | 2-3 wks | **2-5 days** | `everyayah-phonemes` already exists with Tajweed-aware phoneme labels (CC-BY-4.0). |
 | 2. Acoustic model fine-tune | 1-2 wks | 1-2 wks | Unchanged. |
 | 3. WFST construction | 1 wk | 1 wk | Unchanged — bespoke per phoneme inventory. |
 | 4. Mobile runtime / ONNX bundling | 2 wks | 2 wks | Unchanged. |
 | 5. Integration + confidence routing | 1-2 wks | 1-2 wks | Unchanged. |
-| **Total** | **8-11 wks** | **~5-7 wks** | |
+| **Total** | **8-11 wks** | **~7-10 wks** (net ~1-3 wks improvement vs v0.2) |
 
-The real bottlenecks become (a) the **real-imam evaluation set** (the
-methodological non-negotiable from v0.2) and (b) the **WFST + JNI mobile
-integration** work. The "neural model training" piece, traditionally the
-hardest part, is now the smallest piece.
+The hardest part of the project is no longer model training — it is **collecting
+and aligning real-imam audio in a way that respects the offline / privacy-first
+commitment**. That work cannot be shortcut by sourcing audio from the deployed
+application; it must be done up-front by the project team and explicit
+external contributors.
+
+**Why the offline commitment changes the timeline math.** A naive plan would
+fold Phase 0b into an "active learning loop" that captures real-imam audio
+from app users at runtime. That would have eliminated Phase 0b's wall-clock
+cost — at the price of breaking the project's core architectural promise and
+collapsing the differentiation vs. RecitID. v0.4 rejects that trade.
 
 ---
 
@@ -226,18 +245,29 @@ hardest part, is now the smallest piece.
    short surahs). This gives the baseline number any new model has to beat,
    and confirms whether the bottleneck is really the model vs. the audio
    conditions (per the sim2real lesson in whitepaper §5).
-3. **Reach out to [Hetchy](https://huggingface.co/hetchyy)**, the creator of
+3. **Begin partner-masjid outreach for Phase 0a/0b.** Identify 5-10 local
+   masjids willing to permit recitation recording + impulse-response capture.
+   Draft a per-imam written consent process. Schedule recordings before Phase
+   2 begins. This is now the gating-path item.
+4. **Audit publicly-available khutbah sources for license.** Imam podcasts,
+   masjid live-streams, Friday prayer broadcasts (including Mecca/Medina) —
+   build a spreadsheet of channels with verified non-restrictive license terms
+   for research/educational use. Quantity is not the bottleneck; clean
+   licensing is.
+5. **Reach out to [Hetchy](https://huggingface.co/hetchyy)**, the creator of
    `everyayah-phonemes` and the Quranic-Phonemizer. Their work is exactly
-   what we'd otherwise build, under a compatible license. Natural collaborator.
-4. **Decide on a posture toward Tarteel.** They run the most active research
+   what we'd otherwise build, under a compatible license. Natural collaborator
+   and a candidate for sharing real-masjid data if they have any.
+6. **Decide on a posture toward Tarteel.** They run the most active research
    programme in this space; their open assets (whisper-base-ar-quran +
    EveryAyah + QUL) are a foundation we'd build on. Worth being explicit
    about positioning as *complementary, not competitive*: Tarteel optimises
    memorisation and accuracy at the research frontier; this project optimises
    offline mobile deployment and free public access.
-5. **Track RecitID.** It's the sharpest existing test of "is there demand for
+7. **Track RecitID.** It's the sharpest existing test of "is there demand for
    this?" — and the answer is clearly yes (they have a paid product). Their
-   feature set telegraphs what users actually want.
+   feature set telegraphs what users actually want; their cloud-only
+   architecture clarifies what we should *not* do.
 
 ---
 
